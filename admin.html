@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nivora DoT CoM — Admin</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#172033;background:#f4f6fb}
+*{box-sizing:border-box}body{margin:0}header{background:#172033;color:white;padding:18px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:20px;margin:0}header small{color:#c9d2e3}.wrap{max-width:1100px;margin:auto;padding:16px}.card{background:white;border:1px solid #e2e7f0;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 3px 12px #1a2b4a0a}
+h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:block;font-size:13px;font-weight:650;margin-bottom:5px}input,textarea,select,button{font:inherit}input,textarea,select{width:100%;border:1px solid #cbd3e1;border-radius:9px;padding:11px;background:white;color:#172033}textarea{min-height:75px}
+button{border:0;border-radius:9px;padding:10px 14px;background:#245eea;color:white;font-weight:650;cursor:pointer}button.secondary{background:#e9edf5;color:#172033}button.danger{background:#b42318}button:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.muted{color:#65718a;font-size:13px}.notice{padding:11px 13px;border-radius:9px;margin:10px 0;background:#eef4ff;color:#1742a0;white-space:pre-wrap}.error{background:#fff0ef;color:#9b1c13}.success{background:#eaf8ef;color:#17683a}.hidden{display:none!important}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tabs button.active{background:#172033;color:white}
+.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:520px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e9edf4;font-size:14px;vertical-align:top}th{background:#f8f9fc}td img{width:48px;height:48px;object-fit:cover;border-radius:8px}.pill{display:inline-block;background:#eef2ff;padding:4px 8px;border-radius:20px;font-size:12px}
+footer{text-align:center;color:#6b7488;font-size:12px;padding:20px}
+@media(max-width:520px){.wrap{padding:10px}.card{padding:13px}h1{font-size:17px}}
+</style>
+</head>
+<body>
+<header><div><h1>Nivora DoT CoM</h1><small>Admin Dashboard</small></div><button id="logoutBtn" class="secondary hidden">লগ আউট</button></header>
+<div class="wrap">
+  <div id="setup" class="card">
+    <h2>প্রথমবার সেটআপ</h2>
+    <p class="muted">আপনার Supabase Project URL এবং Publishable/anon key দিন। Secret বা service_role key কখনো এখানে দেবেন না। তথ্য এই ব্রাউজারেই থাকবে, সার্ভারে পাঠানো হবে না।</p>
+    <div class="grid">
+      <div><label for="url">Supabase Project URL</label><input id="url" placeholder="https://xxxx.supabase.co" autocomplete="url"></div>
+      <div><label for="key">Publishable / anon key</label><input id="key" placeholder="sb_publishable_... অথবা anon key" autocomplete="off"></div>
+    </div>
+    <div class="actions"><button id="connectBtn">সংযোগ করুন</button></div>
+    <div id="setupMsg" class="notice hidden"></div>
+  </div>
+  <div id="login" class="card hidden">
+    <h2>অ্যাডমিন লগইন</h2>
+    <p class="muted">Supabase Authentication-এ আগে তৈরি করা admin email/password ব্যবহার করুন।</p>
+    <div class="grid"><div><label for="email">ইমেইল</label><input id="email" type="email" autocomplete="username"></div><div><label for="password">পাসওয়ার্ড</label><input id="password" type="password" autocomplete="current-password"></div></div>
+    <div class="actions"><button id="loginBtn">লগইন</button><button id="changeConfig" class="secondary">প্রজেক্ট বদলান</button></div>
+    <div id="loginMsg" class="notice hidden"></div>
+  </div>
+  <div id="app" class="hidden">
+    <div id="globalMsg" class="notice hidden"></div>
+    <div class="tabs"><button class="active" data-tab="products">পণ্য</button><button data-tab="orders">অর্ডার</button><button data-tab="design">থিম ও ছবি</button><button data-tab="settings">সেটআপ</button></div>
+    <section id="productsTab">
+      <div class="card"><h2 id="formTitle">নতুন পণ্য যোগ করুন</h2>
+        <input id="productId" type="hidden">
+        <div class="grid">
+          <div><label for="pname">পণ্যের নাম *</label><input id="pname" required placeholder="যেমন: K8 Wireless Earbuds"></div>
+          <div><label for="pprice">দাম (৳) *</label><input id="pprice" type="number" min="0" step="0.01" required placeholder="560"></div>
+          <div><label for="pimage">ছবির URL</label><input id="pimage" type="url" placeholder="https://..."></div>
+          <div><label for="pstock">স্টক</label><input id="pstock" type="number" min="0" step="1" value="0"></div>
+        </div>
+        <div class="actions"><button id="saveProduct">পণ্য সেভ করুন</button><button id="resetProduct" class="secondary">ফর্ম খালি করুন</button><button id="refreshProducts" class="secondary">রিফ্রেশ</button></div>
+      </div>
+      <div class="card"><h2>পণ্যের তালিকা</h2><div class="tablewrap"><table><thead><tr><th>ছবি</th><th>পণ্য</th><th>দাম</th><th>স্টক</th><th>কাজ</th></tr></thead><tbody id="productsBody"><tr><td colspan="5">লোড হচ্ছে…</td></tr></tbody></table></div></div>
+    </section>
+    <section id="ordersTab" class="hidden">
+      <div class="card"><h2>অর্ডার ম্যানেজমেন্ট</h2><p class="muted">orders টেবিলের সব কলাম দেখানোর চেষ্টা করা হবে। status নামে কলাম থাকলে এখান থেকে স্ট্যাটাস বদলানো যাবে।</p><div class="actions"><button id="refreshOrders">অর্ডার রিফ্রেশ</button></div><div id="ordersMsg" class="notice hidden"></div><div class="tablewrap"><table><thead id="ordersHead"></thead><tbody id="ordersBody"><tr><td>লোড হচ্ছে…</td></tr></tbody></table></div></div>
+    </section>
+    <section id="designTab" class="hidden">
+      <div class="card"><h2>ওয়েবসাইটের থিম ও ছবি</h2><p class="muted">এখানে পরিবর্তন করলে সেটিংস Supabase-এর site_settings টেবিলে সেভ হবে। লোগো/ব্যানারের জন্য সরাসরি image URL এবং bKash নম্বর দিতে পারবেন।</p>
+        <div class="grid">
+          <div><label for="siteName">দোকানের নাম</label><input id="siteName" value="Nivora DoT CoM"></div>
+          <div><label for="siteTag">ছোট স্লোগান</label><input id="siteTag" value="Your choices, your style ✨"></div>
+          <div><label for="heroTitle">হোমপেজের বড় শিরোনাম</label><input id="heroTitle" value="আপনার পছন্দের পণ্য, এক জায়গায়"></div>
+          <div><label for="heroText">হোমপেজের বিবরণ</label><textarea id="heroText">ফ্যাশন, গ্যাজেট এবং দৈনন্দিন প্রয়োজনীয় পণ্য দেখুন।</textarea></div>
+          <div><label for="logoUrl">লোগোর ছবির URL</label><input id="logoUrl" type="url" placeholder="https://.../logo.png"></div>
+          <div><label for="bannerUrl">ব্যানার ছবির URL</label><input id="bannerUrl" type="url" placeholder="https://.../banner.jpg"></div>
+          <div><label for="bkashNumber">bKash পেমেন্ট নম্বর</label><input id="bkashNumber" inputmode="numeric" placeholder="01XXXXXXXXX"></div>
+          <div><label for="themePrimary">প্রধান রং</label><input id="themePrimary" type="color" value="#1769ff"></div>
+          <div><label for="themeBackground">পেজের ব্যাকগ্রাউন্ড</label><input id="themeBackground" type="color" value="#f4f7fb"></div>
+          <div><label for="themeHeader">হেডার/ব্যানারের ব্যাকগ্রাউন্ড</label><input id="themeHeader" type="color" value="#071426"></div>
+        </div>
+        <div class="actions"><button id="saveDesign">থিম ও ছবি সেভ করুন</button><button id="loadDesign" class="secondary">সেভ করা সেটিংস লোড</button><button id="resetDesign" class="secondary">ডিফল্ট ফিরিয়ে আনুন</button></div>
+        <div id="designMsg" class="notice hidden"></div>
+      </div>
+      <div class="card"><h2>ছবি যোগ করার নিয়ম</h2><p class="muted">ছবিটি আগে কোনো পাবলিক image hosting-এ আপলোড করে সরাসরি image URL কপি করুন। Google Drive share page link সাধারণত সরাসরি image URL নয়। এই সংস্করণে সরাসরি ফোনের Gallery থেকে আপলোড নেই। bKash নম্বরটি ক্রেতার Checkout-এ প্রদর্শিত হবে।</p></div>
+    </section>
+    <section id="settingsTab" class="hidden"><div class="card"><h2>সংযোগ সেটিংস</h2><p class="muted">এই অ্যাপ ব্রাউজারে Supabase URL/key রাখে। নিরাপত্তার জন্য secret/service_role key কখনো ব্যবহার করবেন না।</p><button id="editConfig" class="secondary">URL/key পরিবর্তন</button></div></section>
+  </div>
+  <footer>শুধু অনুমোদিত অ্যাডমিন ব্যবহার করুন • Nivora DoT CoM</footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let client = null, productRows = [], orderRows = [];
+  const cfgUrl = 'nivora_supabase_url', cfgKey = 'nivora_supabase_key';
+  function msg(id, text, kind='') { const el=$(id); el.textContent=text; el.className='notice'+(kind?' '+kind:''); el.classList.remove('hidden'); }
+  function hide(id){$(id).classList.add('hidden')}
+  function show(id){$(id).classList.remove('hidden')}
+  function esc(v){return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function connect(url,key){
+    if(!window.supabase){throw new Error('Supabase লাইব্রেরি লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।')}
+    client=window.supabase.createClient(url,key);
+  }
+  function configScreen(){
+    $('setup').classList.remove('hidden'); $('login').classList.add('hidden'); $('app').classList.add('hidden'); $('logoutBtn').classList.add('hidden');
+    $('url').value=localStorage.getItem(cfgUrl)||''; $('key').value=localStorage.getItem(cfgKey)||'';
+  }
+  async function start(){
+    $('setup').classList.add('hidden');
+    const {data:{session},error}=await client.auth.getSession();
+    if(error) throw error;
+    if(session){show('app');show('logoutBtn');await loadProducts();await loadOrders();}
+    else {show('login');hide('app');hide('logoutBtn');}
+  }
+  $('connectBtn').onclick=async()=>{
+    const url=$('url').value.trim().replace(/\/+$/,''), key=$('key').value.trim();
+    if(!/^https:\/\/.+\.supabase\.co$/.test(url)||!key){msg('setupMsg','সঠিক Project URL এবং Publishable/anon key দিন।','error');return}
+    try{connect(url,key);localStorage.setItem(cfgUrl,url);localStorage.setItem(cfgKey,key);await start();}
+    catch(e){msg('setupMsg','সংযোগ হয়নি: '+e.message,'error')}
+  };
+  $('changeConfig').onclick=configScreen; $('editConfig').onclick=configScreen;
+  const defaultDesign={site_name:'Nivora DoT CoM',site_tag:'Your choices, your style ✨',hero_title:'আপনার পছন্দের পণ্য, এক জায়গায়',hero_text:'ফ্যাশন, গ্যাজেট এবং দৈনন্দিন প্রয়োজনীয় পণ্য দেখুন।',logo_url:'',banner_url:'',primary_color:'#1769ff',background_color:'#f4f7fb',header_color:'#071426'};
+  function readDesign(){return {site_name:$('siteName').value.trim(),site_tag:$('siteTag').value.trim(),hero_title:$('heroTitle').value.trim(),hero_text:$('heroText').value.trim(),logo_url:$('logoUrl').value.trim(),banner_url:$('bannerUrl').value.trim(),bkash_number:$('bkashNumber').value.trim(),primary_color:$('themePrimary').value,background_color:$('themeBackground').value,header_color:$('themeHeader').value}}
+  function fillDesign(d={}){const x={...defaultDesign,...(d||{})};$('siteName').value=x.site_name;$('siteTag').value=x.site_tag;$('heroTitle').value=x.hero_title;$('heroText').value=x.hero_text;$('logoUrl').value=x.logo_url;$('bannerUrl').value=x.banner_url;$('bkashNumber').value=x.bkash_number||'';$('themePrimary').value=x.primary_color;$('themeBackground').value=x.background_color;$('themeHeader').value=x.header_color}
+  async function loadDesign(){try{const {data,error}=await client.from('site_settings').select('settings').eq('id',1).maybeSingle();if(error)throw error;fillDesign(data?.settings||{});msg('designMsg',data?'সেভ করা সেটিংস লোড হয়েছে।':'এখনো সেটিংস সেভ করা নেই; ডিফল্ট দেখানো হচ্ছে।',data?'success':'');}catch(e){msg('designMsg','সেটিংস লোড হয়নি: '+e.message+'। আগে setup.sql-এর SQL চালান।','error')}}
+  $('saveDesign').onclick=async()=>{try{const settings=readDesign();const {error}=await client.from('site_settings').upsert({id:1,settings,updated_at:new Date().toISOString()});if(error)throw error;msg('designMsg','থিম ও ছবি Supabase-এ সেভ হয়েছে। ওয়েবসাইটে দেখাতে আপডেট করা index.html GitHub-এ আপলোড করুন।','success')}catch(e){msg('designMsg','সেভ হয়নি: '+e.message+'। Supabase SQL Editor-এ setup.sql চালাতে হবে।','error')}};
+  $('loadDesign').onclick=loadDesign; $('resetDesign').onclick=()=>fillDesign(defaultDesign);
+  $('loginBtn').onclick=async()=>{
+    try{const {error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;hide('loginMsg');await start();}
+    catch(e){msg('loginMsg','লগইন হয়নি: '+e.message,'error')}
+  };
+  $('logoutBtn').onclick=async()=>{await client.auth.signOut();configScreen()};
+  function resetForm(){$('productId').value='';$('pname').value='';$('pprice').value='';$('pimage').value='';$('pstock').value='0';$('formTitle').textContent='নতুন পণ্য যোগ করুন';$('saveProduct').textContent='পণ্য সেভ করুন'}
+  $('resetProduct').onclick=resetForm;
+  $('saveProduct').onclick=async()=>{
+    const name=$('pname').value.trim(), price=Number($('pprice').value), image=$('pimage').value.trim(), stock=Number($('pstock').value), id=$('productId').value;
+    if(!name||$('pprice').value===''||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){msg('globalMsg','পণ্যের নাম, সঠিক দাম এবং ০ বা তার বেশি পূর্ণসংখ্যার স্টক দিন।','error');return}
+    const payload={name,price,image,stock};
+    try{
+      let result;
+      if(id) result=await client.from('products').update(payload).eq('id',id).select();
+      else result=await client.from('products').insert(payload).select();
+      if(result.error) throw result.error;
+      msg('globalMsg',id?'পণ্য আপডেট হয়েছে।':'নতুন পণ্য যোগ হয়েছে।','success');resetForm();await loadProducts();
+    }catch(e){msg('globalMsg','সেভ হয়নি: '+e.message+' — products টেবিলে id, name, price, image, stock কলাম আছে কি না দেখুন।','error')}
+  };
+  async function loadProducts(){
+    $('productsBody').innerHTML='<tr><td colspan="5">লোড হচ্ছে…</td></tr>';
+    try{
+      const {data,error}=await client.from('products').select('*').order('id',{ascending:false});
+      if(error)throw error;productRows=data||[];
+      $('productsBody').innerHTML=productRows.map((p,i)=>`<tr><td>${p.image?`<img src="${esc(p.image)}" alt="">`:'—'}</td><td><b>${esc(p.name)}</b><br><span class="muted">ID: ${esc(p.id)}</span></td><td>৳${esc(p.price)}</td><td>${esc(p.stock)}</td><td><div class="actions"><button class="secondary" data-edit="${i}">এডিট</button><button class="danger" data-delete="${i}">মুছুন</button></div></td></tr>`).join('')||'<tr><td colspan="5">কোনো পণ্য নেই।</td></tr>';
+      $('productsBody').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const p=productRows[+b.dataset.edit];$('productId').value=p.id;$('pname').value=p.name||'';$('pprice').value=p.price??'';$('pimage').value=p.image||'';$('pstock').value=p.stock??0;$('formTitle').textContent='পণ্য এডিট করুন';$('saveProduct').textContent='পরিবর্তন সেভ করুন';window.scrollTo({top:0,behavior:'smooth'})});
+      $('productsBody').querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{const p=productRows[+b.dataset.delete];if(!confirm(`“${p.name}” পণ্যটি মুছবেন?`))return;try{const {error}=await client.from('products').delete().eq('id',p.id);if(error)throw error;msg('globalMsg','পণ্য মুছে ফেলা হয়েছে।','success');await loadProducts()}catch(e){msg('globalMsg','মুছতে পারেনি: '+e.message,'error')}});
+    }catch(e){$('productsBody').innerHTML=`<tr><td colspan="5">পণ্য লোড হয়নি: ${esc(e.message)}<br>টেবিলের নাম products এবং প্রয়োজনীয় কলাম যাচাই করুন।</td></tr>`}
+  }
+  async function loadOrders(){
+    $('ordersHead').innerHTML='';$('ordersBody').innerHTML='<tr><td>লোড হচ্ছে…</td></tr>';
+    try{
+      const {data,error}=await client.from('orders').select('*').limit(100);
+      if(error)throw error;orderRows=data||[];
+      if(!orderRows.length){$('ordersBody').innerHTML='<tr><td>এখনো কোনো অর্ডার নেই, অথবা টেবিল খালি।</td></tr>';return}
+      const cols=Object.keys(orderRows[0]);$('ordersHead').innerHTML='<tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'<th>স্ট্যাটাস পরিবর্তন</th></tr>';
+      $('ordersBody').innerHTML=orderRows.map((o,i)=>'<tr>'+cols.map(c=>`<td>${esc(typeof o[c]==='object'?JSON.stringify(o[c]):o[c])}</td>`).join('')+`<td>${cols.includes('status')?`<select data-status="${i}">${['pending','confirmed','processing','shipped','delivered','cancelled'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}</select><button data-save-status="${i}" class="secondary">সেভ</button>`:'status কলাম নেই'}</td></tr>`).join('');
+      $('ordersBody').querySelectorAll('[data-save-status]').forEach(b=>b.onclick=async()=>{const o=orderRows[+b.dataset.saveStatus];try{const status=$('ordersBody').querySelector(`[data-status="${b.dataset.saveStatus}"]`).value;const {error}=await client.from('orders').update({status}).eq('id',o.id);if(error)throw error;msg('ordersMsg','অর্ডারের স্ট্যাটাস আপডেট হয়েছে।','success');await loadOrders()}catch(e){msg('ordersMsg','স্ট্যাটাস আপডেট হয়নি: '+e.message,'error')}});
+    }catch(e){$('ordersBody').innerHTML=`<tr><td>অর্ডার লোড হয়নি: ${esc(e.message)}<br>orders টেবিলের permission/RLS ও কলাম যাচাই করুন।</td></tr>`}
+  }
+  $('refreshProducts').onclick=loadProducts;$('refreshOrders').onclick=loadOrders;
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['products','orders','design','settings'].forEach(t=>$(t+'Tab').classList.toggle('hidden',t!==b.dataset.tab));if(b.dataset.tab==='orders')loadOrders();if(b.dataset.tab==='design')loadDesign()});
+  const savedUrl=localStorage.getItem(cfgUrl),savedKey=localStorage.getItem(cfgKey);
+  if(savedUrl&&savedKey){$('url').value=savedUrl;$('key').value=savedKey;try{connect(savedUrl,savedKey);start().catch(e=>msg('setupMsg',e.message,'error'))}catch(e){msg('setupMsg',e.message,'error')}} else configScreen();
+})();
+</script>
+</body>
+</html>
