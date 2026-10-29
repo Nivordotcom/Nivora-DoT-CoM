@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nivora DoT CoM — Admin Panel</title>
+<style>
+:root{--navy:#172238;--blue:#2563eb;--bg:#f4f6fb;--text:#1f2937;--muted:#64748b;--border:#e2e8f0}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--navy);color:white;padding:20px 18px}
+header h1{font-size:22px;margin:0} header p{margin:5px 0 0;color:#cbd5e1}
+main{max-width:1000px;margin:22px auto;padding:0 14px}
+.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:12px;margin-bottom:16px;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.stat,.panel{background:white;border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 2px 8px #0f172a08}
+.stat strong{display:block;font-size:25px;color:var(--navy)}.stat span{font-size:13px;color:var(--muted)}
+.panel h2{font-size:18px;margin:0 0 14px}
+form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{font-size:13px;font-weight:600;display:block}
+input,textarea,select{width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;background:white}
+textarea{min-height:80px;resize:vertical}.full{grid-column:1/-1}
+button{border:0;border-radius:9px;padding:11px 15px;background:var(--blue);color:white;font-weight:700;cursor:pointer}
+button.secondary{background:#e2e8f0;color:#1e293b}button.danger{background:#dc2626}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0}
+#search{max-width:300px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:550px}
+th,td{text-align:left;padding:12px;border-bottom:1px solid var(--border);font-size:14px}
+th{color:var(--muted);font-size:12px}
+.product{display:flex;align-items:center;gap:10px}.thumb{width:42px;height:42px;border-radius:8px;object-fit:cover;background:#e2e8f0}
+.empty{text-align:center;color:var(--muted);padding:24px}
+@media(max-width:620px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}form{grid-template-columns:1fr}.full{grid-column:auto}.toolbar{align-items:stretch;flex-direction:column}#search{max-width:none}}
+</style>
+</head>
+<body>
+<header><h1>Nivora DoT CoM</h1><p>Admin Dashboard · Product Manager</p></header>
+<main>
+<div class="notice"><b>Demo Admin Panel:</b> এই ফাইলটি এখন আপনার ব্রাউজারে পণ্য সংরক্ষণ করে (localStorage)। লাইভ ওয়েবসাইটে পণ্য/অর্ডার আপডেট করতে Supabase বা আপনার সাইটের backend সংযোগ করতে হবে।</div>
+<section class="stats">
+<div class="stat"><strong id="count">0</strong><span>মোট পণ্য</span></div>
+<div class="stat"><strong id="stock">0</strong><span>স্টকে আছে</span></div>
+<div class="stat"><strong id="value">৳0</strong><span>মোট পণ্যমূল্য</span></div>
+</section>
+<section class="panel">
+<h2 id="formTitle">নতুন পণ্য যোগ করুন</h2>
+<form id="productForm">
+<input type="hidden" id="editId">
+<label>পণ্যের নাম<input id="name" required placeholder="যেমন: T-shirt"></label>
+<label>দাম (৳)<input id="price" type="number" min="0" step="0.01" required placeholder="500"></label>
+<label>স্টক<input id="quantity" type="number" min="0" step="1" required placeholder="10"></label>
+<label>ছবির URL<input id="image" type="url" placeholder="https://..."></label>
+<label class="full">বিবরণ<textarea id="description" placeholder="পণ্যের বিবরণ"></textarea></label>
+<div class="full actions"><button type="submit">সংরক্ষণ করুন</button><button class="secondary" type="button" id="resetBtn">ফর্ম খালি করুন</button></div>
+</form>
+</section>
+<div class="toolbar"><h2 style="margin:0;font-size:18px">পণ্যের তালিকা</h2><input id="search" placeholder="পণ্য খুঁজুন…"></div>
+<section class="panel tablewrap">
+<table><thead><tr><th>পণ্য</th><th>দাম</th><th>স্টক</th><th>অ্যাকশন</th></tr></thead><tbody id="rows"></tbody></table>
+<div id="empty" class="empty">এখনও কোনো পণ্য যোগ করা হয়নি।</div>
+</section>
+</main>
+<script>
+const STORAGE_KEY='nivora_admin_demo_products_v1';
+let products=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+const $=id=>document.getElementById(id);
+const money=n=>'৳'+Number(n||0).toLocaleString('en-BD',{maximumFractionDigits:2});
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(products));render();}
+function resetForm(){$('productForm').reset();$('editId').value='';$('formTitle').textContent='নতুন পণ্য যোগ করুন';}
+function render(){
+ $('count').textContent=products.length;
+ $('stock').textContent=products.reduce((s,p)=>s+Number(p.quantity||0),0);
+ $('value').textContent=money(products.reduce((s,p)=>s+Number(p.price||0)*Number(p.quantity||0),0));
+ const q=$('search').value.toLowerCase();
+ const filtered=products.filter(p=>p.name.toLowerCase().includes(q));
+ $('rows').innerHTML=filtered.map(p=>`<tr><td><div class="product">${p.image?`<img class="thumb" src="${escapeHtml(p.image)}" alt="">`:'<div class="thumb"></div>'}<div><b>${escapeHtml(p.name)}</b><br><small>${escapeHtml(p.description||'')}</small></div></div></td><td>${money(p.price)}</td><td>${Number(p.quantity||0)}</td><td><div class="actions"><button class="secondary" onclick="editProduct('${p.id}')">Edit</button><button class="danger" onclick="deleteProduct('${p.id}')">Delete</button></div></td></tr>`).join('');
+ $('empty').style.display=filtered.length?'none':'block';
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+window.editProduct=id=>{const p=products.find(x=>x.id===id);if(!p)return;$('editId').value=p.id;$('name').value=p.name;$('price').value=p.price;$('quantity').value=p.quantity;$('image').value=p.image||'';$('description').value=p.description||'';$('formTitle').textContent='পণ্য সম্পাদনা করুন';window.scrollTo({top:0,behavior:'smooth'});};
+window.deleteProduct=id=>{if(confirm('এই পণ্যটি মুছে ফেলবেন?')){products=products.filter(p=>p.id!==id);save();}};
+$('productForm').addEventListener('submit',e=>{e.preventDefault();const id=$('editId').value||crypto.randomUUID();const p={id,name:$('name').value.trim(),price:Number($('price').value),quantity:Number($('quantity').value),image:$('image').value.trim(),description:$('description').value.trim()};if($('editId').value)products=products.map(x=>x.id===id?p:x);else products.push(p);save();resetForm();});
+$('resetBtn').addEventListener('click',resetForm);$('search').addEventListener('input',render);render();
+</script>
+</body>
+</html>
