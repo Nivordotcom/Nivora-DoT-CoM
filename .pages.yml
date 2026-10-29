@@ -1,0 +1,32 @@
+media:
+  - name: product_images
+    label: Product Images
+    input: public
+    output: /images
+
+content:
+  - name: products
+    label: Products
+    type: file
+    path: data/products.json
+    format: json
+    fields:
+      - name: products
+        label: Product List
+        type: object
+        list: true
+        fields:
+          - name: name
+            label: Product Name
+            type: string
+            required: true
+          - name: price
+            label: Price (BDT)
+            type: number
+            required: true
+          - name: image
+            label: Product Image URL
+            type: string
+          - name: stock
+            label: Stock Quantity
+            type: numbernumber
